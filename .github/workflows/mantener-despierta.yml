@@ -1,0 +1,26 @@
+name: Mantener app despierta
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # cada 6 horas, todos los días
+  workflow_dispatch:          # te permite lanzarlo también a mano desde GitHub
+
+jobs:
+  visitar-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repo
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Visitar la app con navegador real
+        run: python despertar.py
