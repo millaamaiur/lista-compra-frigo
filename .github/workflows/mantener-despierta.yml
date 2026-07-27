@@ -2,8 +2,8 @@ name: Mantener app despierta
 
 on:
   schedule:
-    - cron: "0 */6 * * *"   # cada 6 horas, todos los días
-  workflow_dispatch:          # te permite lanzarlo también a mano desde GitHub
+    - cron: "0 */2 * * *"   # cada 2 horas, todos los días
+  workflow_dispatch:
 
 jobs:
   visitar-app:
