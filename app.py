@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 from supabase import create_client
 
@@ -44,24 +45,6 @@ st.markdown(
         letter-spacing: -0.02em;
     }
 
-    div[data-testid="stHorizontalBlock"] {
-        background: #f7f7f9;
-        border-radius: 14px;
-        padding: 10px 14px;
-        margin-bottom: 8px;
-        align-items: center;
-    }
-
-    div[data-testid="stHorizontalBlock"] button {
-        border-radius: 50% !important;
-        width: 38px;
-        height: 38px;
-        background: #eee !important;
-        color: #888 !important;
-        border: none !important;
-        font-size: 15px !important;
-    }
-
     div[data-testid="stTextInput"] input,
     div[data-testid="stNumberInput"] input,
     div[data-baseweb="select"] {
@@ -100,23 +83,6 @@ st.title("🛒 Falta comprar")
 st.caption("Añade lo que se acabe. Se guarda al momento para todos.")
 st.divider()
 
-# --- Mostrar la lista ---
-lista = supabase.table("items").select("*").order("creado_en").execute().data
-
-if not lista:
-    st.caption("No falta nada por ahora 🎉")
-else:
-    for diccionario in lista:
-        col_texto, col_borrar = st.columns([5, 1])
-        with col_texto:
-            st.write(f"🔹 {diccionario['texto']}")
-        with col_borrar:
-            if st.button("✕", key=f"borrar_{diccionario['id']}"):
-                supabase.table("items").delete().eq("id", diccionario["id"]).execute()
-                st.rerun()
-
-st.divider()
-
 # --- Añadir item ---
 with st.form("form_anadir", clear_on_submit=True):
     entrada = st.text_input("Introduce lo que hay que comprar")
@@ -131,9 +97,50 @@ if enviado:
 
 st.divider()
 
-# --- Vaciar lista tras la compra (con confirmación) ---
-confirmar = st.checkbox("Confirmar vaciado de la lista")
-if st.button("✅ Compra hecha", disabled=not confirmar):
+# --- Vaciar lista tras la compra ---
+if st.button("✅ Compra hecha"):
     supabase.table("items").delete().neq("id", 0).execute()
     st.toast("Lista vaciada 🧹")
     st.rerun()
+
+st.divider()
+
+# --- Mostrar la lista + botón de copiar ---
+lista = supabase.table("items").select("*").order("creado_en").execute().data
+
+if not lista:
+    st.caption("No falta nada por ahora 🎉")
+else:
+    for diccionario in lista:
+        st.write(diccionario["texto"])
+
+    texto_lista = "\n".join(diccionario["texto"] for diccionario in lista)
+    texto_js = json.dumps(texto_lista)
+
+    st.components.v1.html(
+        f"""
+        <button id="btn-copiar" style="
+            width: 100%;
+            background: #34a853;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: -apple-system, sans-serif;
+            cursor: pointer;
+            margin-top: 8px;
+        ">📋 Copiar lista</button>
+
+        <script>
+        const boton = document.getElementById("btn-copiar");
+        boton.addEventListener("click", () => {{
+            navigator.clipboard.writeText({texto_js});
+            boton.innerText = "✅ Copiado";
+            setTimeout(() => {{ boton.innerText = "📋 Copiar lista"; }}, 1500);
+        }});
+        </script>
+        """,
+        height=60,
+    )   
